@@ -25,10 +25,10 @@ body {
 header { position: sticky; top: 0; background: var(--bg); padding: 14px 0 8px; z-index: 10; }
 header h1 { font-size: 19px; margin: 0 0 10px; }
 
-.tabs { display: flex; gap: 8px; }
+.tabs { display: flex; gap: 6px; }
 .tabs button {
   flex: 1; background: var(--card); border: 1px solid var(--line); color: var(--muted);
-  border-radius: 12px; padding: 9px 5px; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap;
+  border-radius: 12px; padding: 9px 3px; font-size: 12px; font-family: inherit; cursor: pointer; white-space: nowrap;
 }
 .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
 
@@ -88,6 +88,12 @@ input[type="file"] { width: 100%; font-size: 13px; color: var(--muted); backgrou
 .tilt-strip { border-radius: 12px; padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
 .tilt-strip.caution { background: rgba(245, 166, 35, 0.12); color: var(--warn); border: 1px solid rgba(245, 166, 35, 0.4); }
 .tilt-strip.danger { background: rgba(255, 92, 92, 0.12); color: var(--bad); border: 1px solid rgba(255, 92, 92, 0.4); }
+.routine-strip { cursor: pointer; }
+.routine-summary { border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 600; }
+.routine-summary.ready { background: rgba(47, 191, 113, 0.12); color: var(--good); }
+.routine-summary.partial, .routine-summary.missing { background: rgba(245, 166, 35, 0.12); color: var(--warn); }
+.tag.good { color: var(--good); border-color: rgba(47, 191, 113, 0.5); }
+.tag.bad { color: var(--bad); border-color: rgba(255, 92, 92, 0.5); }
 .gate { display: flex; align-items: center; justify-content: center; padding: 24px 4px; }
 .gate-card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid rgba(255, 92, 92, 0.45); border-radius: 18px; padding: 24px 18px; text-align: center; }
 .gate-icon { font-size: 44px; margin-bottom: 6px; }

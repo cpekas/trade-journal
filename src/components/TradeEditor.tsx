@@ -7,7 +7,7 @@ import { fmtUsd } from '../lib/time'
 import { compressImage } from '../lib/image'
 import ChipGroup from './ChipGroup'
 
-function makeDraft(config: JournalConfig): Trade {
+function makeDraft(config: JournalConfig, routineReady?: boolean): Trade {
   const now = new Date().toISOString()
   return {
     id: crypto.randomUUID(),
@@ -18,6 +18,7 @@ function makeDraft(config: JournalConfig): Trade {
     checklist: config.checklist.map((c) => ({ id: c.id, label: c.label, checked: false })),
     mistakes: [],
     didWell: [],
+    routineReadyAtEntry: routineReady,
   }
 }
 
@@ -34,12 +35,13 @@ interface Props {
   mode: 'new' | 'close' | 'edit'
   initial?: Trade
   config: JournalConfig
+  routineReady?: boolean
   onSave: () => void
   onCancel: () => void
 }
 
-export default function TradeEditor({ mode, initial, config, onSave, onCancel }: Props) {
-  const [t, setT] = useState<Trade>(() => (initial ? structuredClone(initial) : makeDraft(config)))
+export default function TradeEditor({ mode, initial, config, routineReady, onSave, onCancel }: Props) {
+  const [t, setT] = useState<Trade>(() => (initial ? structuredClone(initial) : makeDraft(config, routineReady)))
   const set = (p: Partial<Trade>) => setT((prev) => ({ ...prev, ...p }))
   const num = (v: string) => (v === '' ? undefined : parseFloat(v))
 
@@ -110,7 +112,7 @@ export default function TradeEditor({ mode, initial, config, onSave, onCancel }:
     <div className="form">
       <div className="editor-head">
         <h2>{title}</h2>
-        <button className="ghost" onClick={mode === 'new' ? () => setT(makeDraft(config)) : onCancel}>
+        <button className="ghost" onClick={mode === 'new' ? () => setT(makeDraft(config, routineReady)) : onCancel}>
           {mode === 'new' ? 'پاک‌کردن' : 'انصراف'}
         </button>
       </div>

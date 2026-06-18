@@ -148,12 +148,15 @@ export const tradesRepo = {
 export function clearLocalData() {
   // 'tj.reviews.v1' and 'tj.tilt.ack.v1' must go too — otherwise the previous
   // account's weekly rules / tilt acknowledgment leak to the next login
-  for (const k of [TRADES_KEY, CONFIG_KEY, TOMBSTONES_KEY, SYNC_META_KEY, 'tj.reviews.v1', 'tj.tilt.ack.v1']) {
+  for (const k of [TRADES_KEY, CONFIG_KEY, TOMBSTONES_KEY, SYNC_META_KEY, 'tj.reviews.v1', 'tj.tilt.ack.v1', 'tj.routines.v1', 'tj.nudge.ack.v1']) {
     localStorage.removeItem(k)
   }
 }
 
 // ── config: server-defined lists (symbols, sessions, timeframes, setups, checklist) ──
+export type Cadence = 'monthly' | 'weekly' | 'daily' | 'h4'
+export type RoutineDefs = Record<Cadence, string[]>
+
 export interface JournalConfig {
   symbols: string[]
   sessions: string[]
@@ -162,6 +165,7 @@ export interface JournalConfig {
   leverages: string[]
   checklist: { id: string; label: string }[]
   maxRiskPercent: number
+  routines: RoutineDefs
 }
 
 function defaultConfig(): JournalConfig {
@@ -173,6 +177,12 @@ function defaultConfig(): JournalConfig {
     leverages: [...DEFAULT_CONFIG.leverages],
     checklist: DEFAULT_CONFIG.checklist.map((c) => ({ ...c })),
     maxRiskPercent: DEFAULT_CONFIG.maxRiskPercent,
+    routines: {
+      monthly: [...DEFAULT_CONFIG.routines.monthly],
+      weekly: [...DEFAULT_CONFIG.routines.weekly],
+      daily: [...DEFAULT_CONFIG.routines.daily],
+      h4: [...DEFAULT_CONFIG.routines.h4],
+    },
   }
 }
 
@@ -185,7 +195,12 @@ export const configRepo = {
   getSync(): JournalConfig {
     try {
       const s = localStorage.getItem(CONFIG_KEY)
-      if (s) return { ...defaultConfig(), ...JSON.parse(s) }
+      if (s) {
+        const parsed = JSON.parse(s)
+        const d = defaultConfig()
+        // nested merge so an existing user missing a cadence backfills defaults
+        return { ...d, ...parsed, routines: { ...d.routines, ...(parsed.routines || {}) } }
+      }
     } catch {}
     return defaultConfig()
   },

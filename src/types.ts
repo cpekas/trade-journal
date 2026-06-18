@@ -41,6 +41,7 @@ export interface Trade {
   confidence: number
   moodBefore?: string
   checklist: ChecklistItem[]
+  routineReadyAtEntry?: boolean // were all prep routines complete when this trade was drafted?
   // ── after close ──
   exit?: number
   closes?: PartialClose[]

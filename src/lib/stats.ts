@@ -1,4 +1,6 @@
 import type { Trade } from '../types'
+import type { JournalConfig, Cadence } from './repo'
+import { routinesRepo } from './routines'
 
 export interface Summary {
   total: number
@@ -233,6 +235,85 @@ export function planSplit(trades: Trade[]): PlanSplit {
   })
   const followed = mk(c.filter((t) => t.followedPlan === true))
   const broken = mk(c.filter((t) => t.followedPlan === false))
+  return {
+    total: c.length,
+    adherence: c.length ? Math.round((followed.count / c.length) * 100) : null,
+    followed,
+    broken,
+  }
+}
+
+// ── routine prep (top-down cadences) ──
+export const H4_FRESH_MS = 6 * 3600e3
+const CADENCE_LABEL: Record<Cadence, string> = { monthly: 'ماهانه', weekly: 'هفتگی', daily: 'روزانه', h4: '۴ساعته' }
+
+export function monthKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`
+}
+export function periodKeyFor(cadence: Cadence, iso: string): string {
+  if (cadence === 'monthly') return monthKey(iso)
+  if (cadence === 'weekly') return startOfWeekKey(iso)
+  return localDayKey(iso) // daily + h4 share a per-local-day record; h4 is freshness-gated, re-runnable
+}
+
+export interface CadenceStatus {
+  cadence: Cadence
+  label: string
+  done: number
+  total: number
+  complete: boolean
+  stale: boolean // h4 only: was completed but older than the fresh window
+  lastCompletedAt?: string
+  key: string
+}
+export interface RoutineStatus {
+  level: 'ready' | 'partial' | 'missing'
+  reasons: string[]
+  cadences: CadenceStatus[]
+  allComplete: boolean
+}
+export function routineStatus(config: JournalConfig, now: number = Date.now()): RoutineStatus {
+  const iso = new Date(now).toISOString()
+  const order: Cadence[] = ['monthly', 'weekly', 'daily', 'h4']
+  const cadences: CadenceStatus[] = order.map((c) => {
+    const steps = config.routines?.[c] ?? []
+    const total = steps.length
+    const key = `${c}:${periodKeyFor(c, iso)}`
+    const rec = routinesRepo.get(key)
+    const doneCount = rec.total === total ? rec.done.filter((i) => i < total).length : 0
+    const allTicked = total > 0 && doneCount === total
+    const fresh = c !== 'h4' || (rec.lastCompletedAt ? now - new Date(rec.lastCompletedAt).getTime() < H4_FRESH_MS : false)
+    return {
+      cadence: c,
+      label: CADENCE_LABEL[c],
+      done: doneCount,
+      total,
+      complete: allTicked && fresh,
+      stale: c === 'h4' && allTicked && !fresh,
+      lastCompletedAt: rec.lastCompletedAt,
+      key,
+    }
+  })
+  const pending = cadences.filter((c) => c.total > 0 && !c.complete)
+  const reasons = pending.map((c) => (c.stale ? `روتین ${c.label} کهنه شده` : `روتین ${c.label} ناقص`))
+  const level: RoutineStatus['level'] = pending.length === 0 ? 'ready' : pending.length <= 1 ? 'partial' : 'missing'
+  const allComplete = cadences.every((c) => c.total === 0 || c.complete)
+  return { level, reasons, cadences, allComplete }
+}
+
+// routine adherence: trades entered WITH all routines complete vs not (mirrors planSplit)
+export function routineSplit(trades: Trade[]): PlanSplit {
+  const c = closedTrades(trades).filter((t) => t.routineReadyAtEntry != null)
+  const mk = (list: Trade[]): PlanSide => ({
+    count: list.length,
+    avgR: list.length ? +(list.reduce((s, t) => s + (t.rMultiple as number), 0) / list.length).toFixed(2) : 0,
+    totalR: +list.reduce((s, t) => s + (t.rMultiple as number), 0).toFixed(2),
+    winRate: list.length ? Math.round((list.filter((t) => t.result === 'win').length / list.length) * 100) : 0,
+    totalUsd: +list.reduce((s, t) => s + (t.pnlUsd ?? 0), 0).toFixed(2),
+  })
+  const followed = mk(c.filter((t) => t.routineReadyAtEntry === true))
+  const broken = mk(c.filter((t) => t.routineReadyAtEntry === false))
   return {
     total: c.length,
     adherence: c.length ? Math.round((followed.count / c.length) * 100) : null,

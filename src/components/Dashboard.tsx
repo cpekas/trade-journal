@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
-import { summarize, byField, costliestMistakes, equityCurve, planSplit, type GroupStat } from '../lib/stats'
+import { summarize, byField, costliestMistakes, equityCurve, planSplit, routineSplit, type GroupStat } from '../lib/stats'
 import { fmtUsd } from '../lib/time'
 
 function Spark({ data }: { data: number[] }) {
@@ -57,6 +57,7 @@ export default function Dashboard({ trades }: { trades: Trade[] }) {
 
   const s = useMemo(() => summarize(filtered), [filtered])
   const plan = useMemo(() => planSplit(filtered), [filtered])
+  const routine = useMemo(() => routineSplit(filtered), [filtered])
   const bySetup = useMemo(() => byField(filtered, 'setup'), [filtered])
   const bySession = useMemo(() => byField(filtered, 'session'), [filtered])
   const mistakes = useMemo(() => costliestMistakes(filtered), [filtered])
@@ -128,6 +129,39 @@ export default function Dashboard({ trades }: { trades: Trade[] }) {
                   </p>
                 )}
                 {plan.total < 20 && <p className="muted hint" style={{ marginBottom: 0 }}>نمونه هنوز کمه (n&lt;20) — به‌عنوان فرضیه نگاهش کن، نه نتیجه.</p>}
+              </>
+            )}
+          </div>
+
+          <div className="card">
+            <h2>🧭 اجرای روتین قبل از ورود <span className="tag">با روتین در برابر بدون</span></h2>
+            {routine.adherence == null ? (
+              <p className="muted hint" style={{ margin: 0 }}>
+                موقع ثبت معامله، آماده‌بودن روتین ثبت می‌شه — بعد از چند معامله فعال می‌شه.
+              </p>
+            ) : (
+              <>
+                <div className="adherence-big">
+                  <span className={'bigval ' + (routine.adherence >= 85 ? 'good' : routine.adherence >= 60 ? '' : 'bad')}>{routine.adherence}%</span>
+                  <span className="muted">از {routine.total} معامله با روتین کامل وارد شدی</span>
+                </div>
+                <div className="plan-split">
+                  <div className="plan-side good-side">
+                    <div className="ps-title">با روتین کامل ({routine.followed.count})</div>
+                    <div className="ps-main">{routine.followed.avgR > 0 ? '+' : ''}{routine.followed.avgR}R<span className="muted"> / معامله</span></div>
+                    <div className="muted">{routine.followed.winRate}% برد · {routine.followed.totalR > 0 ? '+' : ''}{routine.followed.totalR}R کل</div>
+                  </div>
+                  <div className="plan-side bad-side">
+                    <div className="ps-title">بدون روتین کامل ({routine.broken.count})</div>
+                    <div className="ps-main">{routine.broken.avgR > 0 ? '+' : ''}{routine.broken.avgR}R<span className="muted"> / معامله</span></div>
+                    <div className="muted">{routine.broken.winRate}% برد · {routine.broken.totalR > 0 ? '+' : ''}{routine.broken.totalR}R کل</div>
+                  </div>
+                </div>
+                {routine.broken.count > 0 && routine.broken.totalR < 0 && (
+                  <p className="verdict bad">
+                    ورود بدون روتینِ کامل تو این بازه {routine.broken.totalR}R{routine.broken.totalUsd ? ` (${fmtUsd(routine.broken.totalUsd)})` : ''} هزینه داشته.
+                  </p>
+                )}
               </>
             )}
           </div>

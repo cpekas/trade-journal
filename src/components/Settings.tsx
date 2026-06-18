@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { configRepo, type JournalConfig } from '../lib/repo'
+import { configRepo, type JournalConfig, type Cadence } from '../lib/repo'
 import { api } from '../lib/api'
 import { getUser } from '../lib/auth'
 import { exportTradesCsv, exportReviewNotesCsv } from '../lib/export'
@@ -132,6 +132,7 @@ export default function SettingsScreen({ onBack, onChange, email, onLogout }: { 
     onChange()
   }
   const setList = (key: 'symbols' | 'sessions' | 'timeframes' | 'setups' | 'leverages') => (items: string[]) => persist({ ...c, [key]: items })
+  const setRoutine = (key: Cadence) => (items: string[]) => persist({ ...c, routines: { ...c.routines, [key]: items } })
   const addCk = () => {
     const v = ck.trim()
     if (v) persist({ ...c, checklist: [...c.checklist, { id: crypto.randomUUID(), label: v }] })
@@ -183,6 +184,15 @@ export default function SettingsScreen({ onBack, onChange, email, onLogout }: { 
           <button className="act" onClick={addCk}>افزودن</button>
         </div>
       </div>
+
+      <div className="card">
+        <h2>روتین آماده‌سازی <span className="tag">تاپ‌داون</span></h2>
+        <p className="muted hint" style={{ margin: 0 }}>مرحله‌های آماده‌سازیِ هر تایم‌فریم. تو تب «روتین» قبل از معامله تیک می‌زنی.</p>
+      </div>
+      <StringList title="ماهانه" items={c.routines.monthly} placeholder="مرحلهٔ ماهانه" onChange={setRoutine('monthly')} />
+      <StringList title="هفتگی" items={c.routines.weekly} placeholder="مرحلهٔ هفتگی" onChange={setRoutine('weekly')} />
+      <StringList title="روزانه" items={c.routines.daily} placeholder="مرحلهٔ روزانه" onChange={setRoutine('daily')} />
+      <StringList title="۴ساعته" items={c.routines.h4} placeholder="مرحلهٔ ۴ساعته" onChange={setRoutine('h4')} />
     </div>
   )
 }

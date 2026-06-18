@@ -38,6 +38,7 @@ const COLUMNS: { label: string; get: (t: Trade) => unknown }[] = [
   { label: 'P/L %', get: (t) => t.pnlPercent },
   { label: 'P/L $', get: (t) => t.pnlUsd },
   { label: 'پایبند به پلن', get: (t) => (t.followedPlan == null ? '' : t.followedPlan ? 'بله' : 'خیر') },
+  { label: 'روتین کامل بود', get: (t) => (t.routineReadyAtEntry == null ? '' : t.routineReadyAtEntry ? 'بله' : 'خیر') },
   { label: 'اشتباهات', get: (t) => (t.mistakes || []).join('، ') },
   { label: 'چی خوب بود', get: (t) => (t.didWell || []).join('، ') },
   { label: 'حال قبل', get: (t) => t.moodBefore },

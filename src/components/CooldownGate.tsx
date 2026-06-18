@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react'
-import type { TiltState } from '../lib/stats'
+import type { TiltState, RoutineStatus } from '../lib/stats'
 
 export function TiltStrip({ tilt }: { tilt: TiltState }) {
   if (tilt.level === 'calm' || tilt.reasons.length === 0) return null
   return (
     <div className={'tilt-strip ' + tilt.level}>
       {tilt.level === 'danger' ? '🛑' : '⚠️'} {tilt.reasons.join(' · ')}
+    </div>
+  )
+}
+
+// Soft (non-blocking) reminder that the top-down prep routines aren't complete.
+export function RoutineStrip({ status, onOpen }: { status: RoutineStatus; onOpen?: () => void }) {
+  if (status.level === 'ready' || status.reasons.length === 0) return null
+  return (
+    <div className="tilt-strip routine-strip caution" role="button" onClick={onOpen}>
+      🧭 {status.reasons.join(' · ')} — برای تکمیل بزن
     </div>
   )
 }

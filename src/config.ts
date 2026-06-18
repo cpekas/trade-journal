@@ -12,6 +12,13 @@ export const DEFAULT_CONFIG = {
   ],
   // personal per-trade risk cap (%) — feeds the execution score and tilt warnings
   maxRiskPercent: 2,
+  // top-down prep routines (editable in Settings; run in the روتین tab)
+  routines: {
+    monthly: ['روند ماهانه (HTF)', 'سطوح کلیدی ماه', 'بایاس کلی'],
+    weekly: ['ساختار هفتگی', 'نقاط نقدینگی', 'پلن هفته'],
+    daily: ['بایاس روز', 'سشن‌های مهم', 'سطوح امروز'],
+    h4: ['ساختار ۴ساعته', 'تأیید ورود'],
+  },
 }
 
 // if-then chips for the weekly focus rule (implementation intentions)

@@ -7,12 +7,14 @@ import Review from './components/Review'
 import SettingsScreen from './components/Settings'
 import Login from './components/Login'
 import Logo from './components/Logo'
-import CooldownGate, { TiltStrip } from './components/CooldownGate'
+import CooldownGate, { TiltStrip, RoutineStrip } from './components/CooldownGate'
+import Routine from './components/Routine'
 import { tradesRepo, configRepo, fetchConfig, clearLocalData, type JournalConfig } from './lib/repo'
 import { isLoggedIn, logout as doLogout, getUser } from './lib/auth'
 import { syncAll } from './lib/sync'
 import { ApiError } from './lib/api'
-import { summarize, tiltState } from './lib/stats'
+import { summarize, tiltState, routineStatus, startOfWeekKey } from './lib/stats'
+import { reviewsRepo } from './lib/reviews'
 
 type Overlay = null | { kind: 'detail' | 'close' | 'edit'; id: string } | { kind: 'settings' }
 type ResultFilter = 'all' | 'open' | 'win' | 'loss'
@@ -20,7 +22,7 @@ type SyncState = 'idle' | 'syncing' | 'ok' | 'error' | 'offline'
 
 export default function App() {
   const [authed, setAuthed] = useState(isLoggedIn())
-  const [tab, setTab] = useState<'new' | 'list' | 'dash' | 'review'>('list')
+  const [tab, setTab] = useState<'new' | 'list' | 'dash' | 'review' | 'routine'>('list')
   const [overlay, setOverlay] = useState<Overlay>(null)
   const [version, setVersion] = useState(0)
   const refresh = () => setVersion((v) => v + 1)
@@ -30,6 +32,7 @@ export default function App() {
   const [setupFilter, setSetupFilter] = useState<string>('all')
   const [now, setNow] = useState(Date.now())
   const [syncState, setSyncState] = useState<SyncState>('idle')
+  const [nudgeAck, setNudgeAck] = useState(() => localStorage.getItem('tj.nudge.ack.v1') || '')
 
   const triggerSync = async () => {
     if (!isLoggedIn()) return
@@ -66,6 +69,7 @@ export default function App() {
 
   const all = useMemo(() => tradesRepo.all(), [version])
   const tilt = useMemo(() => tiltState(all, now), [all, now])
+  const routine = useMemo(() => routineStatus(config, now), [config, now, version])
   const active = useMemo(() => all.filter((t) => t.status !== 'archived'), [all])
   const archived = useMemo(() => all.filter((t) => t.status === 'archived'), [all])
   const s = useMemo(() => summarize(all), [all])
@@ -81,7 +85,7 @@ export default function App() {
   })
 
   const closeOverlay = () => setOverlay(null)
-  const goTab = (t: 'new' | 'list' | 'dash' | 'review') => { setTab(t); closeOverlay() }
+  const goTab = (t: 'new' | 'list' | 'dash' | 'review' | 'routine') => { setTab(t); closeOverlay() }
   const selected = overlay && 'id' in overlay ? all.find((t) => t.id === overlay.id) : undefined
 
   if (!authed) {
@@ -99,6 +103,19 @@ export default function App() {
 
   const syncLabel = syncState === 'syncing' ? '⟳' : syncState === 'ok' ? '✓' : syncState === 'offline' ? '⚇' : syncState === 'error' ? '⚠' : '↻'
 
+  // in-app reminder: weekly review rule unset, or today's routine not done (no push needed)
+  const weekRule = reviewsRepo.get('w:' + startOfWeekKey(new Date(now).toISOString()))
+  const weeklyOverdue = !(weekRule.if && weekRule.then) && !weekRule.focus
+  const dailyCad = routine.cadences.find((c) => c.cadence === 'daily')
+  const dailyOverdue = !!dailyCad && dailyCad.total > 0 && !dailyCad.complete
+  const nudge = weeklyOverdue
+    ? { text: '⏰ قانونِ مرور این هفته رو نزدی', go: 'review' as const, ackKey: 'w:' + startOfWeekKey(new Date(now).toISOString()) }
+    : dailyOverdue
+      ? { text: '🧭 روتین امروزت رو کامل نکردی', go: 'routine' as const, ackKey: dailyCad!.key }
+      : null
+  const showNudge = !!nudge && nudgeAck !== nudge.ackKey
+  const ackNudge = () => { if (nudge) { localStorage.setItem('tj.nudge.ack.v1', nudge.ackKey); setNudgeAck(nudge.ackKey) } }
+
   return (
     <div className="app">
       <header>
@@ -110,7 +127,8 @@ export default function App() {
         </div>
         <div className="tabs">
           <button className={!overlay && tab === 'new' ? 'active' : ''} onClick={() => goTab('new')}>ثبت</button>
-          <button className={!overlay && tab === 'list' ? 'active' : ''} onClick={() => goTab('list')}>معامله‌ها ({active.length})</button>
+          <button className={!overlay && tab === 'routine' ? 'active' : ''} onClick={() => goTab('routine')}>روتین</button>
+          <button className={!overlay && tab === 'list' ? 'active' : ''} onClick={() => goTab('list')}>معامله‌ها</button>
           <button className={!overlay && tab === 'dash' ? 'active' : ''} onClick={() => goTab('dash')}>داشبورد</button>
           <button className={!overlay && tab === 'review' ? 'active' : ''} onClick={() => goTab('review')}>مرور</button>
         </div>
@@ -157,17 +175,26 @@ export default function App() {
         ) : (
           <>
             <TiltStrip tilt={tilt} />
-            <TradeEditor mode="new" config={config} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
+            <RoutineStrip status={routine} onOpen={() => goTab('routine')} />
+            <TradeEditor mode="new" config={config} routineReady={routine.allComplete} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
           </>
         )
       )}
 
       {!overlay && tab === 'dash' && <Dashboard trades={all} />}
 
+      {!overlay && tab === 'routine' && <Routine config={config} onChange={refresh} />}
+
       {!overlay && tab === 'review' && <Review trades={all} config={config} onChange={afterMutation} onSelectTrade={(id) => setOverlay({ kind: 'detail', id })} />}
 
       {!overlay && tab === 'list' && (
         <div className="list">
+          {showNudge && nudge && (
+            <div className="banner warn" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ flex: 1, cursor: 'pointer' }} onClick={() => { ackNudge(); goTab(nudge.go) }}>{nudge.text} — بزن بریم</span>
+              <button className="ghost" onClick={ackNudge} aria-label="بعداً">باشه</button>
+            </div>
+          )}
           <div className="stats">
             <div className="stat"><div className="k">باز</div><div className="v">{openCount}</div></div>
             <div className="stat"><div className="k">نرخ برد</div><div className="v">{s.winRate}%</div></div>
