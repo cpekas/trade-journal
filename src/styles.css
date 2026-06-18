@@ -94,6 +94,11 @@ input[type="file"] { width: 100%; font-size: 13px; color: var(--muted); backgrou
 .routine-summary.partial, .routine-summary.missing { background: rgba(245, 166, 35, 0.12); color: var(--warn); }
 .tag.good { color: var(--good); border-color: rgba(47, 191, 113, 0.5); }
 .tag.bad { color: var(--bad); border-color: rgba(255, 92, 92, 0.5); }
+.routine-hist .hrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; font-size: 12px; }
+.routine-hist .hcad { color: var(--muted); min-width: 52px; font-weight: 700; }
+.routine-hist .hbias { border: 1px solid var(--line); border-radius: 8px; padding: 1px 7px; white-space: nowrap; background: var(--card2); }
+.routine-hist .hbias.good { color: var(--good); border-color: rgba(47, 191, 113, 0.5); }
+.routine-hist .hbias.bad { color: var(--bad); border-color: rgba(255, 92, 92, 0.5); }
 .gate { display: flex; align-items: center; justify-content: center; padding: 24px 4px; }
 .gate-card { width: 100%; max-width: 380px; background: var(--card); border: 1px solid rgba(255, 92, 92, 0.45); border-radius: 18px; padding: 24px 18px; text-align: center; }
 .gate-icon { font-size: 44px; margin-bottom: 6px; }

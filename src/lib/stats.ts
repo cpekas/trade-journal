@@ -1,6 +1,6 @@
 import type { Trade } from '../types'
 import type { JournalConfig, Cadence } from './repo'
-import { routinesRepo } from './routines'
+import { routinesRepo, type Bias } from './routines'
 
 export interface Summary {
   total: number
@@ -262,8 +262,9 @@ export interface CadenceStatus {
   label: string
   done: number
   total: number
+  bias?: Bias
   complete: boolean
-  stale: boolean // h4 only: was completed but older than the fresh window
+  stale: boolean // h4 only: bias set but older than the fresh window
   lastCompletedAt?: string
   key: string
 }
@@ -282,23 +283,26 @@ export function routineStatus(config: JournalConfig, now: number = Date.now()): 
     const key = `${c}:${periodKeyFor(c, iso)}`
     const rec = routinesRepo.get(key)
     const doneCount = rec.total === total ? rec.done.filter((i) => i < total).length : 0
-    const allTicked = total > 0 && doneCount === total
+    // a routine is "done" once you've formed a trend read; structures are optional notes
+    const hasBias = rec.bias != null
     const fresh = c !== 'h4' || (rec.lastCompletedAt ? now - new Date(rec.lastCompletedAt).getTime() < H4_FRESH_MS : false)
     return {
       cadence: c,
       label: CADENCE_LABEL[c],
       done: doneCount,
       total,
-      complete: allTicked && fresh,
-      stale: c === 'h4' && allTicked && !fresh,
+      bias: rec.bias,
+      complete: total > 0 && hasBias && fresh,
+      stale: c === 'h4' && hasBias && !fresh,
       lastCompletedAt: rec.lastCompletedAt,
       key,
     }
   })
   const pending = cadences.filter((c) => c.total > 0 && !c.complete)
-  const reasons = pending.map((c) => (c.stale ? `روتین ${c.label} کهنه شده` : `روتین ${c.label} ناقص`))
+  const reasons = pending.map((c) => (c.stale ? 'ترند ۴ساعته کهنه شده' : `ترند ${c.label} نزدی`))
   const level: RoutineStatus['level'] = pending.length === 0 ? 'ready' : pending.length <= 1 ? 'partial' : 'missing'
-  const allComplete = cadences.every((c) => c.total === 0 || c.complete)
+  // require at least one DEFINED cadence — an all-empty routine config isn't "ready"
+  const allComplete = cadences.some((c) => c.total > 0) && cadences.every((c) => c.total === 0 || c.complete)
   return { level, reasons, cadences, allComplete }
 }
 

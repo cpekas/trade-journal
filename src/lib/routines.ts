@@ -1,12 +1,15 @@
-// Per-period routine completion (top-down prep). Local-only — mirrors reviews.ts.
-// Routine *definitions* live in JournalConfig (synced); only the ticks live here.
+// Per-period routine records (top-down prep): trend bias + checked structures.
+// Local-only — mirrors reviews.ts. Past periods accumulate → reviewable history.
 const KEY = 'tj.routines.v1'
 
+export type Bias = 'up' | 'down' | 'range'
+
 export interface RoutineCompletion {
-  done: number[] // ticked step indexes for that period
-  total: number // step count when last ticked (staleness guard against definition edits)
-  lastCompletedAt?: string // ISO, set when done.length === total
-  runs?: number // how many times it reached complete (h4 re-runs per day)
+  done: number[] // indexes of structures the trader saw (OB/FVG/… — optional notes)
+  total: number // step count when last touched (staleness guard against definition edits)
+  bias?: Bias // the trend read for that timeframe/period — the routine's conclusion
+  lastCompletedAt?: string // ISO, set when bias was last chosen
+  runs?: number // how many times a bias was set (h4 re-checks per day)
 }
 
 type Routines = Record<string, RoutineCompletion> // key = `${cadence}:${periodKey}`
@@ -32,23 +35,28 @@ export const routinesRepo = {
   toggleStep(key: string, idx: number, total: number) {
     const all = read()
     const rec = all[key] || { done: [], total }
-    // a definition edit (length change) invalidates stale ticks
-    const base = rec.total === total ? rec.done.slice() : []
+    const base = rec.total === total ? rec.done.slice() : [] // definition edit invalidates stale ticks
     const done = base.includes(idx) ? base.filter((i) => i !== idx) : [...base, idx]
-    const wasComplete = rec.total === total && rec.done.length === total && total > 0
-    const nowComplete = done.length === total && total > 0
+    all[key] = { ...rec, total, done }
+    write(all)
+  },
+  setBias(key: string, bias: Bias, total: number) {
+    const all = read()
+    const rec = all[key] || { done: [], total }
+    const done = rec.total === total ? rec.done : [] // revalidate ticks after a definition edit
+    const next = rec.bias === bias ? undefined : bias // tap the active one again to clear
     all[key] = {
       done,
       total,
-      lastCompletedAt: nowComplete ? new Date().toISOString() : rec.lastCompletedAt,
-      runs: nowComplete && !wasComplete ? (rec.runs ?? 0) + 1 : rec.runs,
+      bias: next,
+      lastCompletedAt: next ? new Date().toISOString() : rec.lastCompletedAt,
+      runs: next && rec.bias == null ? (rec.runs ?? 0) + 1 : rec.runs,
     }
     write(all)
   },
-  resetRun(key: string, total: number) {
+  reset(key: string, total: number) {
     const all = read()
-    const rec = all[key] || { done: [], total }
-    all[key] = { ...rec, total, done: [] }
+    all[key] = { done: [], total } // full clear: ticks + bias + timing
     write(all)
   },
 }

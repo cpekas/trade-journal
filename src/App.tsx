@@ -176,7 +176,7 @@ export default function App() {
           <>
             <TiltStrip tilt={tilt} />
             <RoutineStrip status={routine} onOpen={() => goTab('routine')} />
-            <TradeEditor mode="new" config={config} routineReady={routine.allComplete} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
+            <TradeEditor mode="new" config={config} routineReady={routine.cadences.some((c) => c.total > 0) ? routine.allComplete : undefined} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
           </>
         )
       )}
