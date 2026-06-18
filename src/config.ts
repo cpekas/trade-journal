@@ -14,10 +14,10 @@ export const DEFAULT_CONFIG = {
   maxRiskPercent: 2,
   // top-down prep routines (editable in Settings; run in the روتین tab)
   routines: {
-    monthly: ['روند ماهانه (HTF)', 'سطوح کلیدی ماه', 'بایاس کلی'],
-    weekly: ['ساختار هفتگی', 'نقاط نقدینگی', 'پلن هفته'],
-    daily: ['بایاس روز', 'سشن‌های مهم', 'سطوح امروز'],
-    h4: ['ساختار ۴ساعته', 'تأیید ورود'],
+    monthly: ['OB', 'FVG', 'Liq', 'Reversal', 'Stone'],
+    weekly: ['OB', 'FVG', 'Liq', 'Reversal', 'Stone'],
+    daily: ['OB', 'FVG', 'Liq', 'Reversal', 'Stone'],
+    h4: ['OB', 'FVG', 'Liq', 'Stone'], // ۴ساعته بدون Reversal
   },
 }
 

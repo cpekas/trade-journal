@@ -191,6 +191,14 @@ export function getRiskCap(): number {
   return typeof v === 'number' && v > 0 ? v : DEFAULT_CONFIG.maxRiskPercent
 }
 
+// the first v2 shipped placeholder routine steps; auto-upgrade users still on them
+const LEGACY_ROUTINES = JSON.stringify({
+  monthly: ['روند ماهانه (HTF)', 'سطوح کلیدی ماه', 'بایاس کلی'],
+  weekly: ['ساختار هفتگی', 'نقاط نقدینگی', 'پلن هفته'],
+  daily: ['بایاس روز', 'سشن‌های مهم', 'سطوح امروز'],
+  h4: ['ساختار ۴ساعته', 'تأیید ورود'],
+})
+
 export const configRepo = {
   getSync(): JournalConfig {
     try {
@@ -199,7 +207,10 @@ export const configRepo = {
         const parsed = JSON.parse(s)
         const d = defaultConfig()
         // nested merge so an existing user missing a cadence backfills defaults
-        return { ...d, ...parsed, routines: { ...d.routines, ...(parsed.routines || {}) } }
+        const merged = { ...d, ...parsed, routines: { ...d.routines, ...(parsed.routines || {}) } }
+        // one-time upgrade: swap the placeholder routines for the real SMC defaults (keeps real edits)
+        if (parsed.routines && JSON.stringify(parsed.routines) === LEGACY_ROUTINES) merged.routines = d.routines
+        return merged
       }
     } catch {}
     return defaultConfig()
