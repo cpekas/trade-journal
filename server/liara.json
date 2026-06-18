@@ -1,0 +1,8 @@
+{
+  "platform": "laravel",
+  "app": "letstrade-api",
+  "laravel": {
+    "configCache": true,
+    "buildAssets": false
+  }
+}

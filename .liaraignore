@@ -1,0 +1,27 @@
+# Frontend (react platform) deploys from the repo root; Liara runs `npm run build`.
+# Exclude everything that isn't a build input.
+
+# Laravel backend — its own app (letstrade-api), never part of the frontend build
+server/
+
+# Dependencies & local build output (Liara reinstalls + rebuilds)
+node_modules/
+dist/
+
+# VCS / editor / OS cruft
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env & secrets
+.env
+.env.*
+
+# Docs
+*.log
+README.md
+TODO.md
+DEPLOY-LIARA.md

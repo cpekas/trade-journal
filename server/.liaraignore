@@ -1,0 +1,12 @@
+# Backend (laravel platform). Liara excludes vendor/ automatically and runs
+# composer install itself; composer.lock pins the working liara composer mirror
+# (package-mirror.liara.ir) so install doesn't hit the broken runflare mirror.
+/node_modules
+# Use Liara panel env vars, not the local dev .env / SQLite db
+.env
+.env.*
+/database/database.sqlite
+# cruft
+.git
+.phpunit.result.cache
+/storage/logs/*.log

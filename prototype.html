@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ژورنال معامله — پیش‌نمایش فرم</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f232c; --line:#2a2f3a;
+    --text:#e6e8ee; --muted:#8b90a0; --accent:#4f8cff;
+    --good:#2fbf71; --bad:#ff5c5c; --warn:#f5a623;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:Vazirmatn,Tahoma,"Segoe UI",sans-serif;line-height:1.7;padding:18px;}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+  .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+  .field{margin-bottom:14px}
+  .lbl{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{background:var(--card2);color:var(--text);border:1px solid var(--line);
+    border-radius:11px;padding:7px 12px;font-size:13px;cursor:pointer;font-family:inherit;transition:.12s}
+  .chip:hover{border-color:var(--accent)}
+  .chip.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .chip.multi.active{background:#3a4a6b;border-color:var(--accent)}
+  .dirbtns .chip[data-dir=long].active{background:var(--good);border-color:var(--good)}
+  .dirbtns .chip[data-dir=short].active{background:var(--bad);border-color:var(--bad)}
+  .nums{display:flex;gap:8px;flex-wrap:wrap}
+  .nums .field{flex:1;min-width:90px;margin:0}
+  input[type=number],input[type=text]{width:100%;background:var(--card2);border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:9px;font-size:14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--accent)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .bigval{font-size:18px;font-weight:700}
+  .good{color:var(--good)} .bad{color:var(--bad)}
+  .stat{background:var(--card2);border-radius:12px;padding:10px 12px;text-align:center;flex:1}
+  .stat .k{font-size:11px;color:var(--muted)} .stat .v{font-size:17px;font-weight:700;margin-top:2px}
+  .banner{border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;margin-top:6px}
+  .banner.ok{background:rgba(47,191,113,.12);color:var(--good);border:1px solid rgba(47,191,113,.4)}
+  .banner.warn{background:rgba(245,166,35,.12);color:var(--warn);border:1px solid rgba(245,166,35,.4)}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:12px;padding:14px;
+    font-size:12px;color:#9fe6b0;overflow:auto;direction:ltr;text-align:left;max-height:520px}
+  .ck{display:flex;flex-direction:column;gap:8px}
+  .ck .chip{text-align:right;display:flex;justify-content:space-between}
+  .ck .chip::after{content:"✗";color:var(--bad)}
+  .ck .chip.active::after{content:"✓";color:#fff}
+</style>
+</head>
+<body>
+  <h1>ژورنال معامله — پیش‌نمایش فرم</h1>
+  <div class="sub">تقریباً بدون تایپ. بزن، اسلاید کن، تگ بزن. پایین صفحه دادهٔ ذخیره‌شده رو زنده ببین.</div>
+
+  <div class="grid">
+    <!-- PRE -->
+    <div>
+      <div class="card">
+        <h2>۱) قبل از ورود <span class="tag">پلن</span></h2>
+
+        <div class="field"><span class="lbl">نماد</span><div class="chips" id="g-symbol"></div></div>
+
+        <div class="field"><span class="lbl">جهت</span>
+          <div class="chips dirbtns">
+            <button class="chip" data-dir="long">Long ▲</button>
+            <button class="chip" data-dir="short">Short ▼</button>
+          </div>
+        </div>
+
+        <div class="field"><span class="lbl">سشن</span><div class="chips" id="g-session"></div></div>
+        <div class="field"><span class="lbl">ستاپ</span><div class="chips" id="g-setup"></div></div>
+        <div class="field"><span class="lbl">تایم‌فریم</span><div class="chips" id="g-timeframe"></div></div>
+
+        <div class="field"><span class="lbl">قیمت‌ها</span>
+          <div class="nums">
+            <div class="field"><span class="lbl">ورود</span><input type="number" id="entry" step="any"></div>
+            <div class="field"><span class="lbl">حد ضرر</span><input type="number" id="stopLoss" step="any"></div>
+            <div class="field"><span class="lbl">حد سود</span><input type="number" id="takeProfit" step="any"></div>
+          </div>
+        </div>
+
+        <div class="field row" style="background:var(--card2);border-radius:12px;padding:10px 14px">
+          <span class="lbl" style="margin:0">نسبت ریسک به ریوارد (خودکار)</span>
+          <span class="bigval" id="rrOut">—</span>
+        </div>
+
+        <div class="field"><span class="lbl">ریسک ٪</span><div class="chips" id="g-riskPercent"></div></div>
+
+        <div class="field"><span class="row"><span class="lbl" style="margin:0">اطمینان</span>
+          <b id="confVal">3</b>/5</span>
+          <input type="range" id="conf" min="1" max="5" value="3" step="1">
+        </div>
+
+        <div class="field"><span class="lbl">حال روانی قبل از ورود</span><div class="chips" id="g-moodBefore"></div></div>
+
+        <div class="field"><span class="lbl">✅ چک‌لیست ورود</span>
+          <div class="ck">
+            <button class="chip" data-ck="confirmed">تأیید گرفتم؟</button>
+            <button class="chip" data-ck="rightSession">سشن درسته؟</button>
+            <button class="chip" data-ck="standardSize">حجم استانداردمه؟</button>
+          </div>
+          <div class="banner warn" id="warnBanner">⚠️ چک‌لیست کامل نیست — بهتره وارد نشی</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POST -->
+    <div>
+      <div class="card">
+        <h2>۲) بعد از بستن <span class="tag">نتیجه</span></h2>
+
+        <div class="field"><span class="lbl">قیمت خروج</span><input type="number" id="exit" step="any"></div>
+
+        <div class="field" style="display:flex;gap:10px">
+          <div class="stat"><div class="k">نتیجه</div><div class="v" id="resOut">—</div></div>
+          <div class="stat"><div class="k">R</div><div class="v" id="rOut">—</div></div>
+          <div class="stat"><div class="k">P/L ٪</div><div class="v" id="pnlOut">—</div></div>
+        </div>
+
+        <div class="field"><span class="lbl">پایبند به پلن بودی؟</span>
+          <div class="chips">
+            <button class="chip" data-plan="yes">بله</button>
+            <button class="chip" data-plan="no">خیر</button>
+          </div>
+        </div>
+
+        <div class="field"><span class="lbl">اشتباهات (چندتایی)</span><div class="chips" id="g-mistakes"></div></div>
+        <div class="field"><span class="lbl">چی خوب بود (چندتایی)</span><div class="chips" id="g-didWell"></div></div>
+        <div class="field"><span class="lbl">حال روانی حین/بعد</span><div class="chips" id="g-moodAfter"></div></div>
+
+        <div class="field"><span class="lbl">اسکرین‌شات چارت</span><input type="file" id="shot" accept="image/*"></div>
+        <div class="field"><span class="lbl">درس امروز (اختیاری — تنها جای تایپ)</span>
+          <input type="text" id="lesson" placeholder="یک خط، اگه خواستی"></div>
+      </div>
+
+      <div class="card">
+        <h2>۳) دیتایی که ذخیره می‌شه <span class="tag">مدل اپ</span></h2>
+        <pre id="jsonOut">{}</pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+const state = {
+  symbol:null, direction:null, session:null, setup:null, timeframe:null,
+  entry:null, stopLoss:null, takeProfit:null, riskPercent:null,
+  plannedRR:null, confidence:3, moodBefore:null,
+  checklist:{confirmed:false, rightSession:false, standardSize:false},
+  exit:null, result:null, rMultiple:null, pnlPercent:null,
+  followedPlan:null, mistakes:[], didWell:[], moodAfter:null,
+  screenshot:null, lesson:''
+};
+
+const C = {
+  symbol:['SOL','BTC','ETH','XRP'],
+  session:['آسیا','لندن','نیویورک'],
+  setup:['Spring','شکست فیک','Fixed','Upthrust','Order Block','FVG','Liquidity Sweep','BOS'],
+  timeframe:['1m','5m','15m','1H','4H','D'],
+  riskPercent:['0.5','1','2'],
+  moodBefore:['😌 آروم','💪 مطمئن','⚡ عجول','😨 ترس','🤑 طمع'],
+  moodAfter:['😌 آروم','😄 راضی','😤 عصبی','😞 پشیمون','😬 مضطرب'],
+  mistakes:['عجله','حجم زیاد','جابجایی حد ضرر','ورود زودهنگام','خروج احساسی','بدون تأیید','FOMO','انتقام‌گیری'],
+  didWell:['صبر','تأیید درست','حجم درست','احترام به حد ضرر','سشن درست','خروج طبق پلن']
+};
+
+function renderChips(key, multi=false, numeric=false){
+  const c=document.getElementById('g-'+key);
+  C[key].forEach(opt=>{
+    const b=document.createElement('button');
+    b.className='chip'+(multi?' multi':''); b.textContent=opt;
+    b.onclick=()=>{
+      if(multi){
+        b.classList.toggle('active');
+        const arr=state[key], i=arr.indexOf(opt);
+        if(i>=0)arr.splice(i,1); else arr.push(opt);
+      }else{
+        [...c.children].forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        state[key]= numeric?parseFloat(opt):opt;
+      }
+      recompute();
+    };
+    c.appendChild(b);
+  });
+}
+['symbol','session','setup','timeframe','moodBefore','moodAfter'].forEach(k=>renderChips(k));
+renderChips('riskPercent',false,true);
+renderChips('mistakes',true);
+renderChips('didWell',true);
+
+function single(sel,fn){document.querySelectorAll(sel).forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(sel).forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); fn(b); recompute();});}
+single('[data-dir]', b=>state.direction=b.dataset.dir);
+single('[data-plan]', b=>state.followedPlan=(b.dataset.plan==='yes'));
+
+document.querySelectorAll('[data-ck]').forEach(b=>b.onclick=()=>{
+  b.classList.toggle('active');
+  state.checklist[b.dataset.ck]=b.classList.contains('active');
+  recompute();
+});
+
+function bindNum(id){const el=document.getElementById(id);
+  el.oninput=()=>{const v=parseFloat(el.value);state[id]=isNaN(v)?null:v;recompute();};}
+['entry','stopLoss','takeProfit','exit'].forEach(bindNum);
+
+const cs=document.getElementById('conf');
+cs.oninput=()=>{state.confidence=+cs.value;document.getElementById('confVal').textContent=cs.value;recompute();};
+document.getElementById('lesson').oninput=e=>{state.lesson=e.target.value;renderJSON();};
+document.getElementById('shot').onchange=e=>{state.screenshot=e.target.files[0]?.name||null;renderJSON();};
+
+function recompute(){
+  const {entry:e, stopLoss:sl, takeProfit:tp, exit:ex, direction:d}=state;
+  // planned R:R
+  let rr=null;
+  if(e!=null&&sl!=null&&tp!=null){const risk=Math.abs(e-sl),rew=Math.abs(tp-e);if(risk>0)rr=+(rew/risk).toFixed(2);}
+  state.plannedRR=rr;
+  document.getElementById('rrOut').textContent = rr? rr+' : 1' : '—';
+  // result
+  let r=null,res=null,pnl=null;
+  if(e!=null&&sl!=null&&ex!=null&&d){
+    const risk=Math.abs(e-sl), pl=(d==='long')?(ex-e):(e-ex);
+    if(risk>0){r=+(pl/risk).toFixed(2);res=r>0?'win':r<0?'loss':'be';}
+    pnl=+((pl/e)*100).toFixed(2);
+  }
+  state.rMultiple=r;state.result=res;state.pnlPercent=pnl;
+  const resOut=document.getElementById('resOut');
+  resOut.textContent=res?(res==='win'?'سود':res==='loss'?'ضرر':'سربه‌سر'):'—';
+  resOut.className='v '+(res==='win'?'good':res==='loss'?'bad':'');
+  document.getElementById('rOut').textContent = r!=null?(r>0?'+':'')+r:'—';
+  document.getElementById('pnlOut').textContent = pnl!=null?(pnl>0?'+':'')+pnl+'%':'—';
+  // checklist banner
+  const ck=state.checklist, ok=ck.confirmed&&ck.rightSession&&ck.standardSize;
+  const wb=document.getElementById('warnBanner');
+  wb.textContent = ok?'✅ آمادهٔ ورود — چک‌لیست کامله':'⚠️ چک‌لیست کامل نیست — بهتره وارد نشی';
+  wb.className='banner '+(ok?'ok':'warn');
+  renderJSON();
+}
+
+function clean(o){const r={};for(const k in o){const v=o[k];
+  if(v===null||v===''||(Array.isArray(v)&&!v.length))continue;
+  if(typeof v==='object'&&!Array.isArray(v)){const c=clean(v);if(Object.keys(c).length)r[k]=c;}
+  else r[k]=v;}return r;}
+function renderJSON(){document.getElementById('jsonOut').textContent=JSON.stringify(clean(state),null,2);}
+recompute();
+</script>
+</body>
+</html>
