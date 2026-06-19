@@ -15,6 +15,7 @@ import { syncAll } from './lib/sync'
 import { ApiError } from './lib/api'
 import { summarize, tiltState, routineStatus, startOfWeekKey, periodKeyFor } from './lib/stats'
 import { reviewsRepo } from './lib/reviews'
+import { routinesRepo } from './lib/routines'
 import type { TrendSnapshot } from './types'
 
 type Overlay = null | { kind: 'detail' | 'close' | 'edit'; id: string } | { kind: 'settings' }
@@ -109,16 +110,25 @@ export default function App() {
 
   const syncLabel = syncState === 'syncing' ? '⟳' : syncState === 'ok' ? '✓' : syncState === 'offline' ? '⚇' : syncState === 'error' ? '⚠' : '↻'
 
-  // in-app reminder: weekly review rule unset, or today's routine not done (no push needed)
-  const weekRule = reviewsRepo.get('w:' + startOfWeekKey(new Date(now).toISOString()))
+  // in-app reminders (no push): tab dots (state-based, always visible) + one banner on landing
+  const nowIso = new Date(now).toISOString()
+  const weekKey = startOfWeekKey(nowIso)
+  const dayKey = periodKeyFor('daily', nowIso)
+  const weekRule = reviewsRepo.get('w:' + weekKey)
   const weeklyOverdue = !(weekRule.if && weekRule.then) && !weekRule.focus
   const dailyCad = routine.cadences.find((c) => c.cadence === 'daily')
   const dailyOverdue = !!dailyCad && dailyCad.total > 0 && !dailyCad.complete
+  // routine reads logged >12h ago that still need a درست/غلط verdict
+  const pendingEval = routinesRepo.allRuns().filter((r) => !r.verdict && now - new Date(r.at).getTime() > 12 * 3600e3).length
+  const routineDot = dailyOverdue || pendingEval > 0
+  const reviewDot = weeklyOverdue
   const nudge = weeklyOverdue
-    ? { text: '⏰ قانونِ مرور این هفته رو نزدی', go: 'review' as const, ackKey: 'w:' + startOfWeekKey(new Date(now).toISOString()) }
+    ? { text: '⏰ قانونِ مرور این هفته رو نزدی', go: 'review' as const, ackKey: 'w:' + weekKey }
     : dailyOverdue
-      ? { text: '🧭 روتین امروزت رو کامل نکردی', go: 'routine' as const, ackKey: 'd:' + periodKeyFor('daily', new Date(now).toISOString()) }
-      : null
+      ? { text: '🧭 روتینِ امروزت رو نزدی', go: 'routine' as const, ackKey: 'd:' + dayKey }
+      : pendingEval > 0
+        ? { text: `🎯 ${pendingEval} روتین منتظرِ ارزیابیه (درست/غلط)`, go: 'routine' as const, ackKey: 'eval:' + dayKey }
+        : null
   const showNudge = !!nudge && nudgeAck !== nudge.ackKey
   const ackNudge = () => { if (nudge) { localStorage.setItem('tj.nudge.ack.v1', nudge.ackKey); setNudgeAck(nudge.ackKey) } }
 
@@ -133,10 +143,10 @@ export default function App() {
         </div>
         <div className="tabs">
           <button className={!overlay && tab === 'new' ? 'active' : ''} onClick={() => goTab('new')}>ثبت</button>
-          <button className={!overlay && tab === 'routine' ? 'active' : ''} onClick={() => goTab('routine')}>روتین</button>
+          <button className={!overlay && tab === 'routine' ? 'active' : ''} onClick={() => goTab('routine')}>روتین{routineDot && <span className="dot" />}</button>
           <button className={!overlay && tab === 'list' ? 'active' : ''} onClick={() => goTab('list')}>معامله‌ها</button>
           <button className={!overlay && tab === 'dash' ? 'active' : ''} onClick={() => goTab('dash')}>داشبورد</button>
-          <button className={!overlay && tab === 'review' ? 'active' : ''} onClick={() => goTab('review')}>مرور</button>
+          <button className={!overlay && tab === 'review' ? 'active' : ''} onClick={() => goTab('review')}>مرور{reviewDot && <span className="dot" />}</button>
         </div>
       </header>
 

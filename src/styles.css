@@ -31,6 +31,8 @@ header h1 { font-size: 19px; margin: 0 0 10px; }
   border-radius: 12px; padding: 9px 3px; font-size: 12px; font-family: inherit; cursor: pointer; white-space: nowrap;
 }
 .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.tabs button .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); margin-right: 4px; vertical-align: middle; }
+.tabs button.active .dot { background: #fff; }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 15px; margin-bottom: 14px; }
 .card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
