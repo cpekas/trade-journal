@@ -1,8 +1,8 @@
 import type { Trade } from '../types'
 import { tradesRepo } from './repo'
-import { gradeOf, executionScore } from './stats'
+import { gradeOf, executionScore, trendAlignment } from './stats'
 import { reviewsRepo } from './reviews'
-import { getRiskCap } from './repo'
+import { getRiskCap, configRepo } from './repo'
 
 function esc(v: unknown): string {
   const s = v == null ? '' : String(v)
@@ -39,6 +39,7 @@ const COLUMNS: { label: string; get: (t: Trade) => unknown }[] = [
   { label: 'P/L $', get: (t) => t.pnlUsd },
   { label: 'پایبند به پلن', get: (t) => (t.followedPlan == null ? '' : t.followedPlan ? 'بله' : 'خیر') },
   { label: 'روتین کامل بود', get: (t) => (t.routineReadyAtEntry == null ? '' : t.routineReadyAtEntry ? 'بله' : 'خیر') },
+  { label: 'هم‌جهت با ترند', get: (t) => { const a = trendAlignment(t.direction, t.routineTrendAtEntry?.[configRepo.getSync().trendRefCadence]); return a === 'aligned' ? 'هم‌جهت' : a === 'counter' ? 'خلاف' : a === 'range' ? 'رنج' : '' } },
   { label: 'اشتباهات', get: (t) => (t.mistakes || []).join('، ') },
   { label: 'چی خوب بود', get: (t) => (t.didWell || []).join('، ') },
   { label: 'حال قبل', get: (t) => t.moodBefore },

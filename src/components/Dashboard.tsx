@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { Trade } from '../types'
-import { summarize, byField, costliestMistakes, equityCurve, planSplit, routineSplit, type GroupStat } from '../lib/stats'
+import { summarize, byField, costliestMistakes, equityCurve, planSplit, routineSplit, trendSplit, type GroupStat } from '../lib/stats'
 import { fmtUsd } from '../lib/time'
+import { CADENCE_FA } from '../config'
+import type { Cadence } from '../lib/repo'
 
 function Spark({ data }: { data: number[] }) {
   if (data.length < 2) {
@@ -46,7 +48,7 @@ type Range = 'day' | 'week' | 'month' | 'all'
 const RANGE_MS: Record<Range, number> = { day: 864e5, week: 7 * 864e5, month: 30 * 864e5, all: Infinity }
 const RANGE_LABEL: Record<Range, string> = { day: 'روز', week: 'هفته', month: 'ماه', all: 'کل' }
 
-export default function Dashboard({ trades }: { trades: Trade[] }) {
+export default function Dashboard({ trades, trendRef }: { trades: Trade[]; trendRef: Cadence }) {
   const [range, setRange] = useState<Range>('all')
 
   const filtered = useMemo(() => {
@@ -58,6 +60,7 @@ export default function Dashboard({ trades }: { trades: Trade[] }) {
   const s = useMemo(() => summarize(filtered), [filtered])
   const plan = useMemo(() => planSplit(filtered), [filtered])
   const routine = useMemo(() => routineSplit(filtered), [filtered])
+  const trend = useMemo(() => trendSplit(filtered, trendRef), [filtered, trendRef])
   const bySetup = useMemo(() => byField(filtered, 'setup'), [filtered])
   const bySession = useMemo(() => byField(filtered, 'session'), [filtered])
   const mistakes = useMemo(() => costliestMistakes(filtered), [filtered])
@@ -162,6 +165,40 @@ export default function Dashboard({ trades }: { trades: Trade[] }) {
                     ورود بدون روتینِ کامل تو این بازه {routine.broken.totalR}R{routine.broken.totalUsd ? ` (${fmtUsd(routine.broken.totalUsd)})` : ''} هزینه داشته.
                   </p>
                 )}
+              </>
+            )}
+          </div>
+
+          <div className="card">
+            <h2>🧭 هم‌جهت با ترندِ {CADENCE_FA[trendRef]} <span className="tag">روتین در برابر جهت</span></h2>
+            {trend.alignedRate == null ? (
+              <p className="muted hint" style={{ margin: 0 }}>
+                موقع ثبت معامله، ترندِ روتینت ذخیره می‌شه — بعد از چند معاملهٔ جهت‌دار این‌جا فعال می‌شه.
+              </p>
+            ) : (
+              <>
+                <div className="adherence-big">
+                  <span className={'bigval ' + (trend.alignedRate >= 60 ? 'good' : 'bad')}>{trend.alignedRate}%</span>
+                  <span className="muted">هم‌جهت (از {trend.aligned.count + trend.counter.count} معاملهٔ جهت‌دار)</span>
+                </div>
+                <div className="plan-split">
+                  <div className="plan-side good-side">
+                    <div className="ps-title">هم‌جهت ({trend.aligned.count})</div>
+                    <div className="ps-main">{trend.aligned.avgR > 0 ? '+' : ''}{trend.aligned.avgR}R<span className="muted"> / معامله</span></div>
+                    <div className="muted">{trend.aligned.winRate}% برد · {trend.aligned.totalR > 0 ? '+' : ''}{trend.aligned.totalR}R کل</div>
+                  </div>
+                  <div className="plan-side bad-side">
+                    <div className="ps-title">خلاف ترند ({trend.counter.count})</div>
+                    <div className="ps-main">{trend.counter.avgR > 0 ? '+' : ''}{trend.counter.avgR}R<span className="muted"> / معامله</span></div>
+                    <div className="muted">{trend.counter.winRate}% برد · {trend.counter.totalR > 0 ? '+' : ''}{trend.counter.totalR}R کل</div>
+                  </div>
+                </div>
+                {trend.counter.count > 0 && trend.counter.totalR < 0 && (
+                  <p className="verdict bad">
+                    تریدِ خلافِ ترند تو این بازه {trend.counter.totalR}R{trend.counter.totalUsd ? ` (${fmtUsd(trend.counter.totalUsd)})` : ''} هزینه داشته.
+                  </p>
+                )}
+                {trend.range.count > 0 && <p className="muted hint" style={{ marginBottom: 0 }}>{trend.range.count} معامله در ترندِ رنج (کنار گذاشته شد).</p>}
               </>
             )}
           </div>

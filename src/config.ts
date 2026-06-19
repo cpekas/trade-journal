@@ -19,7 +19,17 @@ export const DEFAULT_CONFIG = {
     daily: ['OB', 'FVG', 'Liq', 'Reversal', 'Stone'],
     h4: ['OB', 'FVG', 'Liq', 'Stone'], // ۴ساعته بدون Reversal
   },
+  // reference timeframe for the trend-alignment check (user-editable in Settings)
+  trendRefCadence: 'daily',
 }
+
+// shared Persian labels for cadences + trend bias
+export const CADENCE_FA = { monthly: 'ماهانه', weekly: 'هفتگی', daily: 'روزانه', h4: '۴ساعته' } as const
+export const BIAS_FA = {
+  up: { icon: '📈', label: 'صعودی' },
+  down: { icon: '📉', label: 'نزولی' },
+  range: { icon: '↔️', label: 'رنج' },
+} as const
 
 // if-then chips for the weekly focus rule (implementation intentions)
 export const IF_TRIGGERS = [

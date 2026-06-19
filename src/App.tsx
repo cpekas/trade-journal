@@ -15,6 +15,7 @@ import { syncAll } from './lib/sync'
 import { ApiError } from './lib/api'
 import { summarize, tiltState, routineStatus, startOfWeekKey, periodKeyFor } from './lib/stats'
 import { reviewsRepo } from './lib/reviews'
+import type { TrendSnapshot } from './types'
 
 type Overlay = null | { kind: 'detail' | 'close' | 'edit'; id: string } | { kind: 'settings' }
 type ResultFilter = 'all' | 'open' | 'win' | 'loss'
@@ -70,6 +71,11 @@ export default function App() {
   const all = useMemo(() => tradesRepo.all(), [version])
   const tilt = useMemo(() => tiltState(all, now), [all, now])
   const routine = useMemo(() => routineStatus(config, now), [config, now, version])
+  const routineTrends = useMemo(() => {
+    const m: TrendSnapshot = {}
+    for (const c of routine.cadences) if (c.bias) m[c.cadence] = c.bias
+    return m
+  }, [routine])
   const active = useMemo(() => all.filter((t) => t.status !== 'archived'), [all])
   const archived = useMemo(() => all.filter((t) => t.status === 'archived'), [all])
   const s = useMemo(() => summarize(all), [all])
@@ -176,12 +182,12 @@ export default function App() {
           <>
             <TiltStrip tilt={tilt} />
             <RoutineStrip status={routine} onOpen={() => goTab('routine')} />
-            <TradeEditor mode="new" config={config} routineReady={routine.cadences.some((c) => c.total > 0) ? routine.allComplete : undefined} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
+            <TradeEditor mode="new" config={config} routineReady={routine.cadences.some((c) => c.total > 0) ? routine.allComplete : undefined} routineTrends={routineTrends} onSave={() => { afterMutation(); goTab('list') }} onCancel={() => {}} />
           </>
         )
       )}
 
-      {!overlay && tab === 'dash' && <Dashboard trades={all} />}
+      {!overlay && tab === 'dash' && <Dashboard trades={all} trendRef={config.trendRefCadence} />}
 
       {!overlay && tab === 'routine' && <Routine config={config} onChange={refresh} />}
 

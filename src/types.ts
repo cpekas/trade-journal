@@ -1,6 +1,8 @@
 export type Direction = 'long' | 'short'
 export type TradeResult = 'win' | 'loss' | 'be'
 export type TradeStatus = 'open' | 'closed' | 'archived'
+// the per-timeframe trend read snapshotted onto a trade at entry (for trend-alignment)
+export type TrendSnapshot = Partial<Record<'monthly' | 'weekly' | 'daily' | 'h4', 'up' | 'down' | 'range'>>
 
 export interface ChecklistItem {
   id: string
@@ -42,6 +44,7 @@ export interface Trade {
   moodBefore?: string
   checklist: ChecklistItem[]
   routineReadyAtEntry?: boolean // were all prep routines complete when this trade was drafted?
+  routineTrendAtEntry?: TrendSnapshot // the per-timeframe trend read at entry (for trend-alignment)
   // ── after close ──
   exit?: number
   closes?: PartialClose[]

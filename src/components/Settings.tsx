@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { configRepo, type JournalConfig, type Cadence } from '../lib/repo'
+import { CADENCE_FA } from '../config'
 import { api } from '../lib/api'
 import { getUser } from '../lib/auth'
 import { exportTradesCsv, exportReviewNotesCsv } from '../lib/export'
@@ -193,6 +194,16 @@ export default function SettingsScreen({ onBack, onChange, email, onLogout }: { 
       <StringList title="هفتگی" items={c.routines.weekly} placeholder="مرحلهٔ هفتگی" onChange={setRoutine('weekly')} />
       <StringList title="روزانه" items={c.routines.daily} placeholder="مرحلهٔ روزانه" onChange={setRoutine('daily')} />
       <StringList title="۴ساعته" items={c.routines.h4} placeholder="مرحلهٔ ۴ساعته" onChange={setRoutine('h4')} />
+
+      <div className="card">
+        <h2>تایم‌فریمِ مرجعِ ترند <span className="tag">هشدار خلاف‌جهت</span></h2>
+        <p className="muted hint">مبنای کارت «هم‌جهت با ترند» در داشبورد و هشدارِ موقع ثبت معامله.</p>
+        <div className="chips">
+          {(['monthly', 'weekly', 'daily', 'h4'] as Cadence[]).map((cad) => (
+            <button key={cad} className={'chip' + (c.trendRefCadence === cad ? ' active' : '')} onClick={() => persist({ ...c, trendRefCadence: cad })}>{CADENCE_FA[cad]}</button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

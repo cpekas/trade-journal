@@ -1,13 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { Trade, PartialClose } from '../types'
-import { RISK_PERCENTS, MOODS_BEFORE, MOODS_AFTER, MISTAKES, DID_WELL } from '../config'
+import type { Trade, PartialClose, TrendSnapshot } from '../types'
+import { RISK_PERCENTS, MOODS_BEFORE, MOODS_AFTER, MISTAKES, DID_WELL, CADENCE_FA, BIAS_FA } from '../config'
 import { plannedRR, riskFromSize, closeMetrics, aggregateCloses, remainingUsd, sumClosedSize } from '../lib/calc'
+import { trendAlignment } from '../lib/stats'
 import { tradesRepo, type JournalConfig } from '../lib/repo'
 import { fmtUsd } from '../lib/time'
 import { compressImage } from '../lib/image'
 import ChipGroup from './ChipGroup'
 
-function makeDraft(config: JournalConfig, routineReady?: boolean): Trade {
+function makeDraft(config: JournalConfig, routineReady?: boolean, routineTrends?: TrendSnapshot): Trade {
   const now = new Date().toISOString()
   return {
     id: crypto.randomUUID(),
@@ -19,6 +20,7 @@ function makeDraft(config: JournalConfig, routineReady?: boolean): Trade {
     mistakes: [],
     didWell: [],
     routineReadyAtEntry: routineReady,
+    routineTrendAtEntry: routineTrends && Object.keys(routineTrends).length ? routineTrends : undefined,
   }
 }
 
@@ -36,12 +38,13 @@ interface Props {
   initial?: Trade
   config: JournalConfig
   routineReady?: boolean
+  routineTrends?: TrendSnapshot
   onSave: () => void
   onCancel: () => void
 }
 
-export default function TradeEditor({ mode, initial, config, routineReady, onSave, onCancel }: Props) {
-  const [t, setT] = useState<Trade>(() => (initial ? structuredClone(initial) : makeDraft(config, routineReady)))
+export default function TradeEditor({ mode, initial, config, routineReady, routineTrends, onSave, onCancel }: Props) {
+  const [t, setT] = useState<Trade>(() => (initial ? structuredClone(initial) : makeDraft(config, routineReady, routineTrends)))
   const set = (p: Partial<Trade>) => setT((prev) => ({ ...prev, ...p }))
   const num = (v: string) => (v === '' ? undefined : parseFloat(v))
 
@@ -70,6 +73,9 @@ export default function TradeEditor({ mode, initial, config, routineReady, onSav
 
   const toggleCk = (id: string) =>
     set({ checklist: t.checklist.map((c) => (c.id === id ? { ...c, checked: !c.checked } : c)) })
+
+  const refBias = t.routineTrendAtEntry?.[config.trendRefCadence]
+  const trendCounter = trendAlignment(t.direction, refBias) === 'counter'
 
   const save = () => {
     if (isClose) {
@@ -112,7 +118,7 @@ export default function TradeEditor({ mode, initial, config, routineReady, onSav
     <div className="form">
       <div className="editor-head">
         <h2>{title}</h2>
-        <button className="ghost" onClick={mode === 'new' ? () => setT(makeDraft(config, routineReady)) : onCancel}>
+        <button className="ghost" onClick={mode === 'new' ? () => setT(makeDraft(config, routineReady, routineTrends)) : onCancel}>
           {mode === 'new' ? 'پاک‌کردن' : 'انصراف'}
         </button>
       </div>
@@ -143,6 +149,9 @@ export default function TradeEditor({ mode, initial, config, routineReady, onSav
               <button type="button" data-dir="short" className={'chip' + (t.direction === 'short' ? ' active' : '')} onClick={() => set({ direction: 'short' })}>Short ▼</button>
             </div>
           </Field>
+          {trendCounter && refBias && (
+            <div className="banner warn">⚠️ خلافِ ترندِ {CADENCE_FA[config.trendRefCadence]}ته ({BIAS_FA[refBias].icon} {BIAS_FA[refBias].label}) — مطمئنی؟</div>
+          )}
           <Field label="سشن"><ChipGroup options={config.sessions} value={t.session} onChange={(v) => set({ session: v as string })} /></Field>
           <Field label="ستاپ"><ChipGroup options={config.setups} value={t.setup} onChange={(v) => set({ setup: v as string })} /></Field>
           <Field label="تایم‌فریم"><ChipGroup options={config.timeframes} value={t.timeframe} onChange={(v) => set({ timeframe: v as string })} /></Field>

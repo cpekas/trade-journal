@@ -166,6 +166,7 @@ export interface JournalConfig {
   checklist: { id: string; label: string }[]
   maxRiskPercent: number
   routines: RoutineDefs
+  trendRefCadence: Cadence
 }
 
 function defaultConfig(): JournalConfig {
@@ -183,6 +184,7 @@ function defaultConfig(): JournalConfig {
       daily: [...DEFAULT_CONFIG.routines.daily],
       h4: [...DEFAULT_CONFIG.routines.h4],
     },
+    trendRefCadence: 'daily',
   }
 }
 

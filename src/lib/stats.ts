@@ -325,6 +325,36 @@ export function routineSplit(trades: Trade[]): PlanSplit {
   }
 }
 
+// ── trend alignment: did the trade go WITH or AGAINST the routine trend? ──
+export function trendAlignment(direction: Trade['direction'], bias: Bias | undefined): 'aligned' | 'counter' | 'range' | null {
+  if (!direction || !bias) return null
+  if (bias === 'range') return 'range'
+  return direction === (bias === 'up' ? 'long' : 'short') ? 'aligned' : 'counter'
+}
+export interface TrendSplit {
+  total: number
+  alignedRate: number | null // % aligned among aligned+counter (range excluded)
+  aligned: PlanSide
+  counter: PlanSide
+  range: PlanSide
+}
+export function trendSplit(trades: Trade[], refCadence: Cadence): TrendSplit {
+  const c = closedTrades(trades).filter((t) => t.routineTrendAtEntry?.[refCadence])
+  const mk = (list: Trade[]): PlanSide => ({
+    count: list.length,
+    avgR: list.length ? +(list.reduce((s, t) => s + (t.rMultiple as number), 0) / list.length).toFixed(2) : 0,
+    totalR: +list.reduce((s, t) => s + (t.rMultiple as number), 0).toFixed(2),
+    winRate: list.length ? Math.round((list.filter((t) => t.result === 'win').length / list.length) * 100) : 0,
+    totalUsd: +list.reduce((s, t) => s + (t.pnlUsd ?? 0), 0).toFixed(2),
+  })
+  const cls = (t: Trade) => trendAlignment(t.direction, t.routineTrendAtEntry?.[refCadence])
+  const aligned = mk(c.filter((t) => cls(t) === 'aligned'))
+  const counter = mk(c.filter((t) => cls(t) === 'counter'))
+  const range = mk(c.filter((t) => cls(t) === 'range'))
+  const denom = aligned.count + counter.count
+  return { total: c.length, alignedRate: denom ? Math.round((aligned.count / denom) * 100) : null, aligned, counter, range }
+}
+
 // ── tilt detection (rushing / revenge / loss-streak signals from existing data) ──
 export interface TiltState {
   level: 'calm' | 'caution' | 'danger'
