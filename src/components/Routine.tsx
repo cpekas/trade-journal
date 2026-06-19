@@ -22,6 +22,7 @@ function whenLabel(iso: string): string {
 
 export default function Routine({ config, onChange }: { config: JournalConfig; onChange?: () => void }) {
   const [, setV] = useState(0)
+  const [view, setView] = useState<'today' | 'archive'>('today')
   const bump = () => { setV((v) => v + 1); onChange?.() }
   const status = routineStatus(config)
   const defined = status.cadences.filter((c) => c.total > 0)
@@ -47,7 +48,12 @@ export default function Routine({ config, onChange }: { config: JournalConfig; o
 
   return (
     <div className="routine">
-      {/* ── composer: one top-down pass ── */}
+      <div className="rangebar">
+        <button className={'chip' + (view === 'today' ? ' active' : '')} onClick={() => setView('today')}>🧭 امروز</button>
+        <button className={'chip' + (view === 'archive' ? ' active' : '')} onClick={() => setView('archive')}>📜 آرشیو{pending.length ? ` (${pending.length})` : ''}</button>
+      </div>
+
+      {view === 'today' && (
       <div className="card">
         <h2>🧭 روتین امروز <span className="tag">تاپ‌داون</span></h2>
         {defined.length === 0 ? (
@@ -90,8 +96,9 @@ export default function Routine({ config, onChange }: { config: JournalConfig; o
           </>
         )}
       </div>
+      )}
 
-      {/* ── evaluate later: trend correctness is time-dependent ── */}
+      {view === 'archive' && (
       <div className="card">
         <h2>🎯 ارزیابیِ روتین‌ها {accuracy != null && <span className={'tag ' + (accuracy >= 50 ? 'good' : 'bad')}>دقت {accuracy}%</span>}</h2>
         <p className="muted hint" style={{ marginTop: 0 }}>درستیِ روتین به زمان بستگی داره — <b>بعداً</b> که نتیجه معلوم شد، اینجا ✅/❌ بزن.</p>
@@ -111,8 +118,9 @@ export default function Routine({ config, onChange }: { config: JournalConfig; o
           </>
         )}
 
-        {runs.length === 0 && <p className="muted hint" style={{ margin: 0 }}>هنوز روتینی ثبت نشده — بالا یه ترند بزن و «ثبت روتین» کن.</p>}
+        {runs.length === 0 && <p className="muted hint" style={{ margin: 0 }}>هنوز روتینی ثبت نشده — برو «🧭 امروز» و یه ترند ثبت کن.</p>}
       </div>
+      )}
     </div>
   )
 }
