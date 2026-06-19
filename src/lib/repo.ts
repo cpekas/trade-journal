@@ -148,7 +148,7 @@ export const tradesRepo = {
 export function clearLocalData() {
   // 'tj.reviews.v1' and 'tj.tilt.ack.v1' must go too — otherwise the previous
   // account's weekly rules / tilt acknowledgment leak to the next login
-  for (const k of [TRADES_KEY, CONFIG_KEY, TOMBSTONES_KEY, SYNC_META_KEY, 'tj.reviews.v1', 'tj.tilt.ack.v1', 'tj.routines.v1', 'tj.nudge.ack.v1']) {
+  for (const k of [TRADES_KEY, CONFIG_KEY, TOMBSTONES_KEY, SYNC_META_KEY, 'tj.reviews.v1', 'tj.tilt.ack.v1', 'tj.routines.v1', 'tj.routines.v2', 'tj.nudge.ack.v1']) {
     localStorage.removeItem(k)
   }
 }

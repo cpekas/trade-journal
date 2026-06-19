@@ -260,13 +260,12 @@ export function periodKeyFor(cadence: Cadence, iso: string): string {
 export interface CadenceStatus {
   cadence: Cadence
   label: string
-  done: number
   total: number
-  bias?: Bias
-  complete: boolean
-  stale: boolean // h4 only: bias set but older than the fresh window
-  lastCompletedAt?: string
-  key: string
+  bias?: Bias // the latest fresh run's trend for this period
+  complete: boolean // a run was logged in the current period (fresh for h4)
+  stale: boolean // h4 only: logged today but older than the fresh window
+  lastAt?: string
+  runsThisPeriod: number
 }
 export interface RoutineStatus {
   level: 'ready' | 'partial' | 'missing'
@@ -276,26 +275,26 @@ export interface RoutineStatus {
 }
 export function routineStatus(config: JournalConfig, now: number = Date.now()): RoutineStatus {
   const iso = new Date(now).toISOString()
+  const runs = routinesRepo.allRuns()
   const order: Cadence[] = ['monthly', 'weekly', 'daily', 'h4']
   const cadences: CadenceStatus[] = order.map((c) => {
-    const steps = config.routines?.[c] ?? []
-    const total = steps.length
-    const key = `${c}:${periodKeyFor(c, iso)}`
-    const rec = routinesRepo.get(key)
-    const doneCount = rec.total === total ? rec.done.filter((i) => i < total).length : 0
-    // a routine is "done" once you've formed a trend read; structures are optional notes
-    const hasBias = rec.bias != null
-    const fresh = c !== 'h4' || (rec.lastCompletedAt ? now - new Date(rec.lastCompletedAt).getTime() < H4_FRESH_MS : false)
+    const total = (config.routines?.[c] ?? []).length
+    const curPeriod = periodKeyFor(c, iso)
+    const cRuns = runs.filter((r) => r.cadence === c)
+    const latest = cRuns.slice().sort((a, b) => b.at.localeCompare(a.at))[0]
+    const periodMatch = !!latest && periodKeyFor(c, latest.at) === curPeriod
+    // "fresh" = a run logged this period; h4 additionally expires after the 6h window
+    const fresh = c === 'h4' ? (latest ? now - new Date(latest.at).getTime() < H4_FRESH_MS : false) : periodMatch
+    const runsThisPeriod = cRuns.filter((r) => periodKeyFor(c, r.at) === curPeriod).length
     return {
       cadence: c,
       label: CADENCE_LABEL[c],
-      done: doneCount,
       total,
-      bias: rec.bias,
-      complete: total > 0 && hasBias && fresh,
-      stale: c === 'h4' && hasBias && !fresh,
-      lastCompletedAt: rec.lastCompletedAt,
-      key,
+      bias: fresh && latest ? latest.bias : undefined,
+      complete: total > 0 && fresh,
+      stale: c === 'h4' && periodMatch && !fresh,
+      lastAt: latest?.at,
+      runsThisPeriod,
     }
   })
   const pending = cadences.filter((c) => c.total > 0 && !c.complete)

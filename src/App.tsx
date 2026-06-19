@@ -13,7 +13,7 @@ import { tradesRepo, configRepo, fetchConfig, clearLocalData, type JournalConfig
 import { isLoggedIn, logout as doLogout, getUser } from './lib/auth'
 import { syncAll } from './lib/sync'
 import { ApiError } from './lib/api'
-import { summarize, tiltState, routineStatus, startOfWeekKey } from './lib/stats'
+import { summarize, tiltState, routineStatus, startOfWeekKey, periodKeyFor } from './lib/stats'
 import { reviewsRepo } from './lib/reviews'
 
 type Overlay = null | { kind: 'detail' | 'close' | 'edit'; id: string } | { kind: 'settings' }
@@ -111,7 +111,7 @@ export default function App() {
   const nudge = weeklyOverdue
     ? { text: '⏰ قانونِ مرور این هفته رو نزدی', go: 'review' as const, ackKey: 'w:' + startOfWeekKey(new Date(now).toISOString()) }
     : dailyOverdue
-      ? { text: '🧭 روتین امروزت رو کامل نکردی', go: 'routine' as const, ackKey: dailyCad!.key }
+      ? { text: '🧭 روتین امروزت رو کامل نکردی', go: 'routine' as const, ackKey: 'd:' + periodKeyFor('daily', new Date(now).toISOString()) }
       : null
   const showNudge = !!nudge && nudgeAck !== nudge.ackKey
   const ackNudge = () => { if (nudge) { localStorage.setItem('tj.nudge.ack.v1', nudge.ackKey); setNudgeAck(nudge.ackKey) } }
